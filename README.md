@@ -43,6 +43,8 @@ cookie=p-b=xxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 3. Create a client
 ```ts
+import {PoeClient} from "poe-node-api";
+
 const client = new PoeClient({debug: false});
 await client.init()
 ```
@@ -94,6 +96,10 @@ await client.sendMessage(text, botNickName, withChatBreak, (result: string) => {
 > withChatBreak: boolean
 > 
 > callback: (result: string) => void
+
+> Note: Too many requests within one minute will result in account being blocked !!!!!
+> 
+> I had sent about 20 messages in one minute, and now it's blocked.
 
 ### AddChatBreak
 ```ts

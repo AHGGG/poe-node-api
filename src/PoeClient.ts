@@ -285,7 +285,6 @@ export class PoeClient{
         if(this.debug) console.log(`messages:\n`, JSON.stringify(messages))
         if(this.debug) console.log(`=======================================================\n`)
 
-        // 一次次的获取，直到获取到count个message
         while (count > 0) {
             const msgs = await this.getChatList(botNickName, count, cursor);
 
@@ -488,7 +487,7 @@ export class PoeClient{
             let displayName = bot['displayName'] as DisplayNameEnum;
             let chatData: any = await this.getBotByNickName(NickName[displayName]);
             if(this.debug) console.log(`${displayName} | chatData:`, JSON.stringify(chatData, null, 2));
-            let nickName = chatData?.defaultBotObject?.nickname; // 例如 展示的模型Sage 对应的nickname和model是：BotType.capybara
+            let nickName = chatData?.defaultBotObject?.nickname;
             if(nickName) bots[nickName] = chatData;
         }
         this.bots = bots
@@ -666,7 +665,7 @@ export class PoeClient{
             envConfig[envBotIdK] = envBotIdV;
         }
 
-        // 更新后写入文件
+        // update env
         const envConfigString = Object.entries(envConfig)
             .map(([key, value]) => `${key}=${value}`)
             .join('\n')
