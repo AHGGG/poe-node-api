@@ -1,0 +1,42 @@
+{
+  "name": "poe-node-api",
+  "version": "0.0.1",
+  "description": "A reverse engineered Node.js client for Quora's Poe.",
+  "main": "dist/index.js",
+  "types": "dist/types.d.ts",
+  "type": "module",
+  "files": [
+    "dist/",
+    "src/",
+    "example/",
+    "LICENSE",
+    "tsconfig.json",
+    "README.md",
+    "package.json",
+    ".env"
+  ],
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": ["poe", "client", "api", "sage", "claude", "chatgpt"],
+  "author": "AHGGG",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/crypto-js": "^4.1.1",
+    "@types/diff": "^5.0.3",
+    "@types/node": "^18.15.11",
+    "@types/random-useragent": "^0.3.1",
+    "@types/ws": "^8.5.4",
+    "typescript": "^5.0.4"
+  },
+  "dependencies": {
+    "crypto-js": "^4.1.1",
+    "diff": "^5.1.0",
+    "dotenv": "^16.0.3",
+    "https-proxy-agent": "^5.0.1",
+    "node-fetch": "^3.3.1",
+    "random-useragent": "^0.5.0",
+    "socks-proxy-agent": "^7.0.0",
+    "ws": "^8.12.1"
+  }
+}
