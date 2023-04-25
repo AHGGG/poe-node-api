@@ -10,6 +10,7 @@ import dotenv from "dotenv";
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+console.log(`__dirname:`, __dirname)
 const queries = {
     chatViewQuery: fs.readFileSync(path.join(__dirname, "./graphql/ChatViewQuery.graphql"), {encoding: "utf8"}),
     addMessageBreakMutation: fs.readFileSync(path.join(__dirname, "./graphql/AddMessageBreakMutation.graphql"), {encoding: "utf8"}),
@@ -88,9 +89,10 @@ export class PoeClient{
         this.debug = debug
 
         this.setBotId()
+        if(this.debug) console.log(`env:\n`, JSON.stringify(process.env))
 
         if (!this.headers.cookie) {
-            throw new Error('Invalid "fetch" is not a function');
+            throw new Error('cookie is null');
         }
 
         if (!this._fetch) {
@@ -100,8 +102,6 @@ export class PoeClient{
         if (typeof this._fetch !== 'function') {
             throw new Error('Invalid "fetch" is not a function')
         }
-
-        if(this.debug) console.log(`env:\n`, JSON.stringify(process.env))
     }
 
     /**
