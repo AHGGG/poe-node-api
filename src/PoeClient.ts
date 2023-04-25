@@ -1,7 +1,7 @@
 import { fetch as globalFetch } from './fetch.js'
 import WebSocket from "ws";
 import CryptoJS from "crypto-js";
-import * as diff from "diff";
+// import * as diff from "diff";
 import fs from "fs";
 import path from "path";
 import {fileURLToPath} from "url";
@@ -436,15 +436,15 @@ export class PoeClient{
                     const text = dataPayload.messageAdded.text;
                     const state = dataPayload.messageAdded.state;
                     if (state !== 'complete') {
-                        const differences = diff.diffChars(previousText, text);
-                        let result = '';
-                        differences.forEach((part) => {
-                            if (part.added) {
-                                result += part.value;
-                            }
-                        });
+                        // const differences = diff.diffChars(previousText, text);
+                        // let result = '';
+                        // differences.forEach((part) => {
+                        //     if (part.added) {
+                        //         result += part.value;
+                        //     }
+                        // });
                         previousText = text;
-                        callback?.(result)
+                        callback?.(previousText)
                     } else {
                         if (!ws) {
                             console.error(`state === 'complete' and ws is null, onMsgData:`, JSON.stringify(jsonData))
