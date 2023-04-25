@@ -1,7 +1,6 @@
 import { fetch as globalFetch } from './fetch.js'
 import WebSocket from "ws";
 import CryptoJS from "crypto-js";
-// import * as diff from "diff";
 import fs from "fs";
 import path from "path";
 import {fileURLToPath} from "url";
@@ -251,8 +250,8 @@ export class PoeClient{
      * @param count number of messages to get, default 25
      * @param cursor get count of messages before startCursor (cursor represent one message / chat_break line)
      */
-    public async getHistory(botNickName: BotNickNameEnum, count=25, cursor: string | undefined = undefined) {
-        let messages: any[] = []
+    public async getHistory(botNickName: BotNickNameEnum, count=25, cursor: string | undefined = undefined): Promise<HistoryItem[]> {
+        let messages: HistoryItem[] = []
         let displayName = this.getDisplayName(botNickName)
         if (!displayName) {
             console.error(`Can not find displayName for botNickName: ${botNickName}`)
@@ -430,7 +429,6 @@ export class PoeClient{
     }
 
     public listenWs(callback?: (result: string) => void) {
-        let previousText = '';
         return new Promise((resolve) => {
             const onMessage = (data: any) => {
                 let jsonData = JSON.parse(data);
@@ -440,15 +438,7 @@ export class PoeClient{
                     const text = dataPayload.messageAdded.text;
                     const state = dataPayload.messageAdded.state;
                     if (state !== 'complete') {
-                        // const differences = diff.diffChars(previousText, text);
-                        // let result = '';
-                        // differences.forEach((part) => {
-                        //     if (part.added) {
-                        //         result += part.value;
-                        //     }
-                        // });
-                        previousText = text;
-                        callback?.(previousText)
+                        callback?.(text)
                     } else {
                         if (!ws) {
                             console.error(`state === 'complete' and ws is null, onMsgData:`, JSON.stringify(jsonData))

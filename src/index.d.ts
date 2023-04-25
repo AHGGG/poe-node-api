@@ -59,3 +59,32 @@ declare interface Chat {
     defaultBotNickname: string
     id: string
 }
+
+declare interface HistoryItem {
+    node: HistoryItemNode
+    cursor: string
+    id: string
+}
+
+declare interface HistoryItemNode {
+    id: string
+    messageId: number
+    creationTime: number
+    text: string
+    author: string
+    linkifiedText: string
+    state: string
+    contentType: string
+    suggestedReplies: string[]
+    vote: any
+    voteReason: any
+    chat: HistoryItemChat
+    __isNode: string
+    __typename: string
+}
+
+declare interface HistoryItemChat {
+    chatId: number
+    defaultBotNickname: string
+    id: string
+}
