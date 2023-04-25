@@ -281,26 +281,29 @@ export class PoeClient{
 
         if(count <= 0 || !cursor) return messages
 
-        if(this.debug) console.log(`=======================================================\n`)
-        if(this.debug) console.log(`messages:\n`, JSON.stringify(messages))
-        if(this.debug) console.log(`=======================================================\n`)
+        if (this.debug) {
+            console.log(`=======================================================\n`)
+            console.log(`messages:\n`, JSON.stringify(messages))
+            console.log(`=======================================================\n`)
+        }
 
         while (count > 0) {
             const msgs = await this.getChatList(botNickName, count, cursor);
 
-            if(this.debug) console.log(`=======================================================\n`)
-            if(this.debug) console.log(`msgs:\n`, JSON.stringify(msgs))
-            if(this.debug) console.log(`=======================================================\n`)
+            if(this.debug) {
+                console.log(`=======================================================\n`);
+                console.log(`msgs:\n`, JSON.stringify(msgs));
+                console.log(`=======================================================\n`);
+            }
 
             if (msgs === undefined || msgs.pageInfo === undefined || msgs.edges === undefined || msgs.edges.length === 0) {
                 if(this.debug) console.log(`msgs === undefined || msgs.pageInfo === undefined || msgs.edges === undefined || msgs.edges.length === 0`)
                 break
             }
-            msgs.edges.push({"key": "=============================== ↓ old message ↓ ==============================="});
-            messages = msgs.edges.concat(messages)
-            count -= msgs.edges.length
-            cursor = msgs.pageInfo.startCursor
-            if(this.debug) console.log(`count: ${count}, cursor: ${cursor}`)
+            messages = msgs.edges.concat(messages);
+            count -= msgs.edges.length;
+            cursor = msgs.pageInfo.startCursor;
+            if(this.debug) {}console.log(`count: ${count}, cursor: ${cursor}`);
         }
 
         return messages
@@ -405,9 +408,11 @@ export class PoeClient{
         const channelData = await _setting.json();
         this.tchannelData = channelData.tchannelData
         this.headers['poe-tchannel'] = channelData.tchannelData.channel
-        if(this.debug) console.log(`channelData:`, channelData)
-        if(this.debug) console.log("=========================== Downloading channelData ===========================\n");
-        return channelData.tchannelData
+        if (this.debug) {
+            console.log(`channelData:`, channelData)
+            console.log("=========================== Downloading channelData ===========================\n");
+        }
+        return channelData.tchannelData;
     }
 
     public connectWs() {
@@ -491,8 +496,10 @@ export class PoeClient{
             if(nickName) bots[nickName] = chatData;
         }
         this.bots = bots
-        if(this.debug) console.log(`this.bots:`, JSON.stringify(this.bots))
-        if(this.debug) console.log("=========================== Downloading all bots ===========================\n");
+        if (this.debug) {
+            console.log(`this.bots:`, JSON.stringify(this.bots))
+            console.log("=========================== Downloading all bots ===========================\n");
+        }
         return bots;
     }
 
@@ -527,8 +534,10 @@ export class PoeClient{
                 && json?.pageProps?.payload?.chatOfBotDisplayName?.chatId
                 && json?.pageProps?.payload?.chatOfBotDisplayName?.id) {
                 this.bots[botNickName] = json.pageProps.payload.chatOfBotDisplayName;
-                if(this.debug) console.log(`getBot:${displayName}, url:${url}, this.bots[${botNickName}]: \n`, JSON.stringify(this.bots[botNickName]))
-                if(this.debug) console.log("=========================== getBotByNickName ===========================\n");
+                if (this.debug) {
+                    console.log(`getBot:${displayName}, url:${url}, this.bots[${botNickName}]: \n`, JSON.stringify(this.bots[botNickName]))
+                    console.log("=========================== getBotByNickName ===========================\n");
+                }
                 return json?.pageProps?.payload?.chatOfBotDisplayName;
             }
         }
@@ -639,12 +648,14 @@ export class PoeClient{
         }
 
         // read .env file by fs
-        const envPath = path.resolve(__dirname, '../.env');
+        const envPath = path.resolve(".env");
 
         // set key value pair to .env file
         const envConfig = dotenv.parse(fs.readFileSync(envPath));
-        if(this.debug) console.log(`[poe-formkey] old:${envConfig["poe-formkey"]}, new: ${this.headers["poe-formkey"]}`)
-        if(this.debug) console.log(`[buildId] old:${envConfig["buildId"]}, new: ${this.nextData.buildId}`)
+        if (this.debug) {
+            console.log(`[poe-formkey] old:${envConfig["poe-formkey"]}, new: ${this.headers["poe-formkey"]}`)
+            console.log(`[buildId] old:${envConfig["buildId"]}, new: ${this.nextData.buildId}`)
+        }
         envConfig["poe-formkey"] = this.headers["poe-formkey"];
         envConfig["buildId"] = this.nextData.buildId;
 
@@ -659,8 +670,10 @@ export class PoeClient{
             const envBotIdK = `${displayName}_id`;
             const envBotIdV = this.bots[botNickName].id+'';
 
-            if(this.debug) console.log(`[${displayName}_chatId] old:${envConfig[envBotChatIdK]}, new: ${envBotChatIdV}`)
-            if(this.debug) console.log(`[${displayName}_id] old:${envConfig[envBotIdK]}, new: ${envBotIdV}`)
+            if (this.debug) {
+                console.log(`[${displayName}_chatId] old:${envConfig[envBotChatIdK]}, new: ${envBotChatIdV}`)
+                console.log(`[${displayName}_id] old:${envConfig[envBotIdK]}, new: ${envBotIdV}`)
+            }
             envConfig[envBotChatIdK] = envBotChatIdV;
             envConfig[envBotIdK] = envBotIdV;
         }

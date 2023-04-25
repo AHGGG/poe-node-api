@@ -1,6 +1,6 @@
 {
   "name": "poe-node-api",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "A reverse engineered Node.js client for Quora's Poe.",
   "main": "dist/PoeClient.js",
   "types": "dist/PoeClient.d.ts",
