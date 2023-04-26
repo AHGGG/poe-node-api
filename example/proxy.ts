@@ -47,7 +47,7 @@ async function getProxyIpInfoFromIpInfo(options: any, httpsProxy: string) {
     if (httpsProxy) {
         const fetchParam = {
             method: 'GET',
-            agent: new HttpsProxyAgent(httpsProxy) // 短时间ip不会变，只能用HTTPS的Agent
+            agent: new HttpsProxyAgent(httpsProxy)
         }
         const r = await options.fetch('https://ipinfo.io/json', fetchParam);
         if (!r.ok) {

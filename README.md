@@ -41,7 +41,15 @@ npm install poe-node-api
 cookie=p-b=xxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-3. Create a client
+3. Fetch all needed info
+```ts
+const client = new PoeClient({debug: false});
+await client.init()
+await client.updateAllBotInfo() // Need to download params when first init, next time will not need to fetch these params again until cookie is changed/logout(For now).
+```
+- [UpdateAllBotInfo](#updateallbotinfo)
+
+4. Create a client
 ```ts
 import {PoeClient} from "poe-node-api";
 
@@ -66,7 +74,7 @@ await client.init()
 - fetch?: FetchFunction
   - type FetchFunction = typeof fetch
 
-4. choose a bot
+5. choose a bot and send msg
 
 botNickName <==> botDisplayName
 > - a2 <==> Claude-instant
@@ -97,9 +105,11 @@ await client.sendMessage(text, botNickName, withChatBreak, (result: string) => {
 > 
 > callback: (result: string) => void
 
-> Note: Too many requests within one minute will result in account being blocked !!!!!
+> **Warning**: Too many requests within one minute will result in (free)account being blocked !!!!!
 > 
-> I had sent about 20 messages in one minute, and now it's blocked.
+> I had sent about 20 messages in one minute, and now it's blocked. Login failed with error message: `Something went wrong. Please wait a moment and try again.`
+> 
+> So make sure you know what you're doing~
 
 ### AddChatBreak
 ```ts
