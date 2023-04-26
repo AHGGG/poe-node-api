@@ -6,6 +6,7 @@ const {HttpsProxyAgent} = http
 
 // Temporary use:
 // Move this file to src/
+// Terminal run: cp -r graphql dist/
 // Terminal run: yarn run build
 // Terminal run: node .\dist\proxy.js > proxy.log
 // Get your ip in https://ipinfo.io/

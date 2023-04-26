@@ -177,6 +177,7 @@ await client.updateAllBotInfo()
 
 ## TODO
 - [ ] Add type definition to bots/viewer/nextData
+- [ ] Use free SMS/email services to log in?
 
 ## Notes
 - I'm working on one of my project which can integrate any bot like chatgpt by plugin. But I can't find any poe node api, so I try to write this client. Huge thanks to [poe-api](https://github.com/ading2210/poe-api)(ISC License) and [poe](https://github.com/muharamdani/poe)(MIT License).

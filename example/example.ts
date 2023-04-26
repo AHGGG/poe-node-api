@@ -2,6 +2,7 @@ import {PoeClient, sleep} from "../src/PoeClient";
 
 // Temporary use:
 // Move this file to src/
+// Terminal run: cp -r graphql dist/
 // Terminal run: yarn run build
 // Terminal run: node .\dist\example.js > example.log
 let client = new PoeClient({debug: true});
