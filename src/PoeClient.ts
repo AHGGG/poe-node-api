@@ -63,7 +63,7 @@ export const NickName: NickNameType = {
 let ws: WebSocket;
 
 export class PoeClient{
-    private bots: any = {}
+    private bots: Bots = {}
     private viewer: any = {}
     private nextData: any = {}
     private readonly debug: boolean = false
@@ -123,7 +123,7 @@ export class PoeClient{
                     chatId: +chatId,
                     id: id
                 };
-                if(this.debug) console.log(`read ${displayName}'s chatId(${this.bots[nickName].chatId}) and id(${this.bots[nickName].id})`)
+                if(this.debug) console.log(`read ${displayName}'s chatId(${this.bots[nickName]!.chatId}) and id(${this.bots[nickName]!.id})`)
             }
         }
     }
@@ -162,7 +162,7 @@ export class PoeClient{
         }
         const variables = {
             bot: botNickName,
-            chatId: this.bots[botNickName].chatId,
+            chatId: this.bots[botNickName]?.chatId,
             query: text,
             source: null,
             withChatBreak: withChatBreak
@@ -184,7 +184,7 @@ export class PoeClient{
     public async addChatBreak(botNickName: BotNickNameEnum) {
         const data = await this.makeRequest({
             query: `${queries.addMessageBreakMutation}`,
-            variables: {chatId: this.bots[botNickName].chatId},
+            variables: {chatId: this.bots[botNickName]?.chatId},
         });
         if (!data.data) {
             if(this.debug) console.log("Can not clear context! data:", data);
@@ -650,15 +650,15 @@ export class PoeClient{
         envConfig["buildId"] = this.nextData.buildId;
 
         for (const botNickName in this.bots) {
-            if (!this.bots[botNickName] || !this.bots[botNickName].chatId || !this.bots[botNickName].id) {
+            if (!this.bots[botNickName] || !this.bots[botNickName]?.chatId || !this.bots[botNickName]?.id) {
                 if(this.debug) console.log(`${botNickName} in this.bots is not valid!, this.bots[${botNickName}]:\n`, JSON.stringify(this.bots[botNickName], null, 2))
                 continue;
             }
             const displayName = DisplayName[botNickName as BotNickNameEnum];
             const envBotChatIdK = `${displayName}_chatId`;
-            const envBotChatIdV = this.bots[botNickName].chatId+'';
+            const envBotChatIdV = this.bots[botNickName]?.chatId+'';
             const envBotIdK = `${displayName}_id`;
-            const envBotIdV = this.bots[botNickName].id+'';
+            const envBotIdV = this.bots[botNickName]?.id+'';
 
             if (this.debug) {
                 console.log(`[${displayName}_chatId] old:${envConfig[envBotChatIdK]}, new: ${envBotChatIdV}`)

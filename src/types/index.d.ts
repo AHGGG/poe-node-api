@@ -30,36 +30,6 @@ declare interface PoeHeaders{
     cookie: string
 }
 
-
-declare interface EdgeItem {
-    node?: Node
-    cursor?: string
-    id?: string
-}
-
-declare interface Node {
-    id: string
-    messageId: number
-    creationTime: number
-    text: string
-    author: string
-    linkifiedText: string
-    state: string
-    contentType: string
-    suggestedReplies: any[]
-    vote: any
-    voteReason: any
-    chat: Chat
-    __isNode: string
-    __typename: string
-}
-
-declare interface Chat {
-    chatId: number
-    defaultBotNickname: string
-    id: string
-}
-
 declare interface HistoryItem {
     node: HistoryItemNode
     cursor: string
