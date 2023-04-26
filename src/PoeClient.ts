@@ -64,7 +64,7 @@ let ws: WebSocket;
 
 export class PoeClient{
     private bots: Bots = {}
-    private viewer: any = {}
+    private viewer: Viewer = {}
     private nextData: any = {}
     private readonly debug: boolean = false
     private connected: boolean = false
@@ -76,10 +76,31 @@ export class PoeClient{
         const {
             cookie,
             debug = false,
-            fetch = globalFetch
+            fetch = globalFetch,
+            retry = 5,
+            retryMsInterval = 2000
         } = opts
 
-        this._fetch = fetch
+        this._fetch = async (url, options) => {
+            console.log(`fetch: ${url}, options:`, options)
+            return new Promise(async (resolve, reject) => {
+                for (let i = 0; i < retry; ++i) {
+                    if (i > 0) {
+                        console.log(`retrying ${url}, ${i}/${retry}...`)
+                        await sleep(retryMsInterval)
+                    }
+                    try {
+                        const retryRes = await fetch(url, {...options})
+                        if (retryRes.ok) {
+                            return resolve(retryRes)
+                        }
+                    } catch (e){
+                        console.error(e)
+                    }
+                }
+                reject(new Error(`Failed to fetch ${url} after ${retry} retries`))
+            });
+        }
         this.headers = {
             'poe-formkey': process.env["poe-formkey"] || '',
             'poe-tchannel': process.env["poe-tchannel"] || '',
@@ -260,7 +281,7 @@ export class PoeClient{
         // first cursor is in nextData, use this cursor to get latest 5? messages
         if (this.nextData) {
             messages = this.nextData?.props?.pageProps?.payload?.chatOfBotDisplayName?.messagesConnection?.edges ?? []
-            cursor = this.nextData.props?.pageProps?.payload?.chatOfBotDisplayName?.messagesConnection?.pageInfo?.startCursor
+            cursor = this.nextData?.props?.pageProps?.payload?.chatOfBotDisplayName?.messagesConnection?.pageInfo?.startCursor
         }
 
         // try to find the latest cursor
@@ -372,9 +393,7 @@ export class PoeClient{
         const r = await this._fetch("https://poe.com", {
             method: 'GET',
             headers: {cookie: this.headers.cookie}
-        }).catch(e => {
-            throw new Error(`fetch(https://poe.com) [error!!!]: ${e.message}`);
-        });
+        })
         const json_regex = /<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s;
         let html = await r.text();
         let jsonText = json_regex.exec(html)?.[1]; // get script props data
@@ -499,37 +518,27 @@ export class PoeClient{
      * @param retry retry how many times, default 10
      * @param retryIntervalMs retry interval, default 2000ms
      */
-    public async getBotByNickName(botNickName: BotNickNameEnum, retry=10, retryIntervalMs=2000) {
+    public async getBotByNickName(botNickName: BotNickNameEnum) {
         if(this.debug) console.log("\n=========================== getBotByNickName ===========================");
         let displayName = DisplayName[botNickName]
         const url = `https://poe.com/_next/data/${this.nextData.buildId}/${displayName}.json`;
 
-        for (let i = 0; i < retry; ++i) {
-            if (i > 0) {
-                if(this.debug) console.log(`retry getBotByNickName, nickname: ${botNickName}, retry: ${i}/${retry}`)
-                await sleep(retryIntervalMs);
+        const retryRes = await this._fetch(url, {
+                method: 'GET',
+                headers: {cookie: this.headers.cookie}
             }
-            let retryRes
-            try {
-                retryRes = await this._fetch(url, {
-                        method: 'GET',
-                        headers: {cookie: this.headers.cookie}
-                    }
-                );
-            } catch (e){
-                continue;
+        );
+
+        let json = await retryRes.json();
+        if (json?.pageProps?.payload?.chatOfBotDisplayName
+            && json?.pageProps?.payload?.chatOfBotDisplayName?.chatId
+            && json?.pageProps?.payload?.chatOfBotDisplayName?.id) {
+            this.bots[botNickName] = json.pageProps.payload.chatOfBotDisplayName;
+            if (this.debug) {
+                console.log(`getBot:${displayName}, url:${url}, this.bots[${botNickName}]: \n`, JSON.stringify(this.bots[botNickName]))
+                console.log("=========================== getBotByNickName ===========================\n");
             }
-            let json = await retryRes?.json();
-            if (json?.pageProps?.payload?.chatOfBotDisplayName
-                && json?.pageProps?.payload?.chatOfBotDisplayName?.chatId
-                && json?.pageProps?.payload?.chatOfBotDisplayName?.id) {
-                this.bots[botNickName] = json.pageProps.payload.chatOfBotDisplayName;
-                if (this.debug) {
-                    console.log(`getBot:${displayName}, url:${url}, this.bots[${botNickName}]: \n`, JSON.stringify(this.bots[botNickName]))
-                    console.log("=========================== getBotByNickName ===========================\n");
-                }
-                return json?.pageProps?.payload?.chatOfBotDisplayName;
-            }
+            return json?.pageProps?.payload?.chatOfBotDisplayName;
         }
         if(this.debug) console.log("=========================== getBotByNickName ===========================\n");
     }

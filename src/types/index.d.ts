@@ -4,6 +4,8 @@ declare interface PoeClientOptions{
     proxy?: ProxyInfo
     debug?: boolean
     fetch?: FetchFunction
+    retry?: number
+    retryMsInterval?: number
 }
 declare interface ProxyInfo{
     socks?: {
