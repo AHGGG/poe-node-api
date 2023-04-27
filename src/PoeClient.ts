@@ -84,15 +84,20 @@ export class PoeClient{
         this._fetch = async (url, options) => {
             console.log(`fetch: ${url}, options:`, options)
             return new Promise(async (resolve, reject) => {
-                for (let i = 0; i < retry; ++i) {
+                for (let i = 0; i <= retry; ++i) {
                     if (i > 0) {
-                        console.log(`retrying ${url}, ${i}/${retry}...`)
+                        console.log(`retrying ${url}, ${i}/${retry}...${new Date().getSeconds()}`)
                         await sleep(retryMsInterval)
                     }
                     try {
                         const retryRes = await fetch(url, {...options})
                         if (retryRes.ok) {
-                            return resolve(retryRes)
+                            return resolve(retryRes);
+                        } else {
+                            console.error(`\tfetch failed: ${url}, ${retryRes.status}, ${retryRes.statusText}`)
+                            if (+retryRes.status === 400) {
+                                console.error(`\t[Note] Make sure you put the correct cookie in .env file, like ===> cookie=p-b=xxxxxxxx. After setting a new cookie, delete other poe's old key-value pairs.`)
+                            }
                         }
                     } catch (e){
                         console.error(e)
@@ -582,13 +587,10 @@ export class PoeClient{
             "content-type": "application/json",
             "poe-tag-id": CryptoJS.enc.Hex.stringify(CryptoJS.MD5(base_string))
         };
-        if(this.debug) console.debug("[before makeRequest] headers: ", headers, ", payload:", payload)
         const response = await this._fetch('https://poe.com/api/gql_POST', {
             method: 'POST',
             headers: headers,
             body: payload
-        }).catch(e => {
-            throw new Error(`fetch('https://poe.com/api/gql_POST') [error!!!]: ${e.message}, payload:${payload}`)
         })
         return await response.json();
     }
@@ -685,6 +687,9 @@ export class PoeClient{
         // write to .env file
         fs.writeFileSync(envPath, envConfigString);
         if(this.debug) console.log(`.env file updated`)
+
+        // reload env file
+        dotenv.config();
     }
 }
 
