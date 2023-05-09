@@ -71,6 +71,8 @@ export class PoeClient{
     private headers : PoeHeaders
     // @ts-ignore
     private tchannelData: TchannelData;
+    private nicknames: any = {} // displayName -> nickname
+    private displayNames: any = {} // nickname -> displayName
     protected _fetch: FetchFunction = globalFetch
     constructor(opts: PoeClientOptions) {
         const {
@@ -133,23 +135,33 @@ export class PoeClient{
      * Read .env file and set poe-formkey / buildId / botsInfo to memory
      */
     public setBotId() {
-        let envKeys = Object.keys(process.env);
-        let nickNames = Object.keys(BotNickNameEnum);
-        for (let nickName of nickNames) {
-            let displayName = DisplayName[nickName as BotNickNameEnum];
-            let botChatIdKey = displayName + '_' + 'chatId';
-            let botIdKey = displayName + '_' + 'id';
-            if(envKeys.includes(botChatIdKey) && envKeys.includes(botIdKey)) {
+        const envMap = Object.keys(process.env).reduce((result, key) => {
+            result.set(key, process.env[key]);
+            return result;
+        }, new Map());
+
+        for (let [envKey, _] of envMap) {
+            if (!envKey.includes("_chatId") && !envKey.includes("_id") && !envKey.includes("_-_")) {
+                continue
+            }
+            let localNickname = envKey.split('_-_')[0];
+            let displayNameAndID = envKey.split('_-_')[1];// like: GPT-4_chatId
+            let localDisplayName = displayNameAndID.substring(0, displayNameAndID.indexOf("_chatId"));
+            const botChatIdKey = `${localNickname}_-_${localDisplayName}_chatId`;
+            const botIdKey = `${localNickname}_-_${localDisplayName}_id`;
+            if(envMap.has(botChatIdKey) && envMap.has(botIdKey)) {
                 let chatId = process.env[botChatIdKey];
                 let id = process.env[botIdKey];
                 if (!chatId || !id) {
                     continue
                 }
-                this.bots[nickName] = {
+                this.bots[localNickname] = {
                     chatId: +chatId,
                     id: id
                 };
-                if(this.debug) console.log(`read ${displayName}'s chatId(${this.bots[nickName]!.chatId}) and id(${this.bots[nickName]!.id})`)
+                this.nicknames[localDisplayName] = localNickname;
+                this.displayNames[localNickname] = localDisplayName;
+                if(this.debug) console.log(`read ${localDisplayName}'s chatId(${this.bots[localNickname]!.chatId}) and id(${this.bots[localNickname]!.id})`)
             }
         }
     }
@@ -665,10 +677,13 @@ export class PoeClient{
                 if(this.debug) console.log(`${botNickName} in this.bots is not valid!, this.bots[${botNickName}]:\n`, JSON.stringify(this.bots[botNickName], null, 2))
                 continue;
             }
-            const displayName = DisplayName[botNickName as BotNickNameEnum];
-            const envBotChatIdK = `${displayName}_chatId`;
+            let displayName = this.getDisplayName(botNickName as BotNickNameEnum)
+            if (displayName.includes("+")) {
+                displayName = displayName.replace("+", "_2");// can't read a2_2_-_Claude+_chatId from env file, so replace it to _2
+            }
+            const envBotChatIdK = `${botNickName}_-_${displayName}_chatId`;
             const envBotChatIdV = this.bots[botNickName]?.chatId+'';
-            const envBotIdK = `${displayName}_id`;
+            const envBotIdK = `${botNickName}_-_${displayName}_id`;
             const envBotIdV = this.bots[botNickName]?.id+'';
 
             if (this.debug) {
