@@ -45,7 +45,7 @@ cookie=p-b=xxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```ts
 const client = new PoeClient({debug: false});
 await client.init()
-await client.updateAllBotInfo() // Need to download params when first init, next time will not need to fetch these params again until cookie is changed/logout(For now).
+// If no poe-formkey and buildId in .env file, client will download needed params, next time will not need to fetch these params again until cookie is changed/logout(For now).
 ```
 - [UpdateAllBotInfo](#updateallbotinfo)
 

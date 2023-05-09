@@ -187,7 +187,7 @@ export class PoeClient{
      * @param withChatBreak
      * @param callback
      */
-    public async sendMessage(text: string, botNickName: BotNickNameEnum, withChatBreak = false, callback = console.log) {
+    public async sendMessage(text: string, botNickName: BotNickNameEnum | string, withChatBreak = false, callback = console.log) {
         if (!this.connected) {
             await this.disConnectWs()
             await this.getNextData()
@@ -196,7 +196,11 @@ export class PoeClient{
             await this.connectWs()
         }
         if (!this.bots[botNickName]?.chatId || !this.bots[botNickName]?.id) {
-            await this.getBotByNickName(botNickName)
+            const displayName = this.getDisplayName(botNickName)
+            if (!displayName) {
+                throw new Error(`can not get displayName by botNickName: ${botNickName}`)
+            }
+            await this.getBotByDisplayName(displayName)
         }
         const variables = {
             bot: botNickName,
@@ -219,7 +223,7 @@ export class PoeClient{
     /**
      * Add a chat break to the bot, equals to click the clear button
      */
-    public async addChatBreak(botNickName: BotNickNameEnum) {
+    public async addChatBreak(botNickName: BotNickNameEnum | string) {
         const data = await this.makeRequest({
             query: `${queries.addMessageBreakMutation}`,
             variables: {chatId: this.bots[botNickName]?.chatId},
@@ -288,7 +292,7 @@ export class PoeClient{
      * @param count number of messages to get, default 25
      * @param cursor get count of messages before startCursor (cursor represent one message / chat_break line)
      */
-    public async getHistory(botNickName: BotNickNameEnum, count=25, cursor: string | undefined = undefined): Promise<HistoryItem[]> {
+    public async getHistory(botNickName: BotNickNameEnum | string, count=25, cursor: string | undefined = undefined): Promise<HistoryItem[]> {
         let messages: HistoryItem[] = []
         let displayName = this.getDisplayName(botNickName)
         if (!displayName) {
@@ -303,7 +307,7 @@ export class PoeClient{
 
         // try to find the latest cursor
         if (!cursor) {
-            let chatData = await this.getBotByNickName(botNickName);
+            let chatData = await this.getBotByDisplayName(displayName);
 
             // let hasPreviousPage = chatData?.messagesConnection?.pageInfo?.hasPreviousPage;
             // if (!hasPreviousPage) {
@@ -352,10 +356,11 @@ export class PoeClient{
      * @param count
      * @param cursor
      */
-    public async getChatList(botNickName: BotNickNameEnum, count=25, cursor: string | undefined) {
+    public async getChatList(botNickName: BotNickNameEnum | string, count=25, cursor: string | undefined) {
         let id = this.bots[botNickName]?.id;
-        if (!id) {
-            await this.getBotByNickName(botNickName)
+        const displayName = this.getDisplayName(botNickName);
+        if (!id && displayName) {
+            await this.getBotByDisplayName(displayName)
             id = this.bots[botNickName]?.id;
         }
         if (!id || !cursor) {
@@ -494,8 +499,10 @@ export class PoeClient{
                 this.connected = false
                 return resolve(true);
             };
-            ws.on('close', onClose);
-            ws.close();
+            if (ws) {
+                ws.on('close', onClose);
+                ws.close();
+            }
             this.connected = false
         });
     }
@@ -515,9 +522,8 @@ export class PoeClient{
 
         for (let i = 0; i < bot_list.length; i++) {
             const bot = bot_list[i];
-            let displayName = bot['displayName'] as DisplayNameEnum;
-            let chatData: any = await this.getBotByNickName(NickName[displayName]);
-            if(this.debug) console.log(`${displayName} | chatData:`, JSON.stringify(chatData, null, 2));
+            let displayName = bot['displayName'];
+            let chatData: any = await this.getBotByDisplayName(displayName);
             let nickName = chatData?.defaultBotObject?.nickname;
             if(nickName) bots[nickName] = chatData;
         }
@@ -531,13 +537,10 @@ export class PoeClient{
 
     /**
      * Try to get bot's chatId and id, if failed, retry
-     * @param botNickName BotNickNameEnum
-     * @param retry retry how many times, default 10
-     * @param retryIntervalMs retry interval, default 2000ms
+     * @param displayName BotNickNameEnum
      */
-    public async getBotByNickName(botNickName: BotNickNameEnum) {
-        if(this.debug) console.log("\n=========================== getBotByNickName ===========================");
-        let displayName = DisplayName[botNickName]
+    public async getBotByDisplayName(displayName: string) {
+        if(this.debug) console.log("\n=========================== getBotByDisplayName ===========================");
         const url = `https://poe.com/_next/data/${this.nextData.buildId}/${displayName}.json`;
 
         const retryRes = await this._fetch(url, {
@@ -550,22 +553,31 @@ export class PoeClient{
         if (json?.pageProps?.payload?.chatOfBotDisplayName
             && json?.pageProps?.payload?.chatOfBotDisplayName?.chatId
             && json?.pageProps?.payload?.chatOfBotDisplayName?.id) {
-            this.bots[botNickName] = json.pageProps.payload.chatOfBotDisplayName;
+            const botNickName = json.pageProps.payload.chatOfBotDisplayName?.defaultBotObject?.nickname;
+            if (displayName && botNickName) {
+                this.bots[botNickName] = json.pageProps.payload.chatOfBotDisplayName;
+                this.nicknames[displayName] = botNickName
+                this.displayNames[botNickName] = displayName;
+            }
             if (this.debug) {
-                console.log(`getBot:${displayName}, url:${url}, this.bots[${botNickName}]: \n`, JSON.stringify(this.bots[botNickName]))
-                console.log("=========================== getBotByNickName ===========================\n");
+                console.log(`getBot:${displayName}, url:${url}, (${botNickName})this.bots[${botNickName}]: \n`, JSON.stringify(this.bots[botNickName]))
+                console.log("=========================== getBotByDisplayName ===========================\n");
             }
             return json?.pageProps?.payload?.chatOfBotDisplayName;
         }
-        if(this.debug) console.log("=========================== getBotByNickName ===========================\n");
+        if(this.debug) console.log("=========================== getBotByDisplayName ===========================\n");
     }
 
     /**
      * Get bot's displayName, capybara ==> Sage etc.
      * @param botNickName
      */
-    public getDisplayName(botNickName: BotNickNameEnum) {
-        return this.bots[botNickName]?.defaultBotObject?.displayName || DisplayName[botNickName]
+    public getDisplayName(botNickName: BotNickNameEnum | string) {
+        const displayName = this.displayNames[botNickName] || this.bots[botNickName]?.defaultBotObject?.displayName || (typeof botNickName !== 'string' && DisplayName[botNickName]);
+        if (!displayName) {
+            console.error(`getDisplayNameByNickName failed, botNickName: ${botNickName}`)
+        }
+        return displayName;
     }
 
     /**
