@@ -1,5 +1,5 @@
 import { fetch as globalFetch } from './fetch.js'
-import WebSocket from "ws";
+import WebSocket, {ErrorEvent} from "ws";
 import CryptoJS from "crypto-js";
 import fs from "fs";
 import path from "path";
@@ -60,9 +60,10 @@ export const NickName: NickNameType = {
     [DisplayNameEnum['NeevaAI']]: BotNickNameEnum.hutia
 }
 
-let ws: WebSocket;
-
 export class PoeClient{
+    // @ts-ignore
+    private ws: WebSocket
+    private env: ProcessEnv
     private bots: Bots = {}
     private viewer: Viewer = {}
     private nextData: any = {}
@@ -77,11 +78,18 @@ export class PoeClient{
     constructor(opts: PoeClientOptions) {
         const {
             cookie,
+            env = process.env,
             debug = false,
             fetch = globalFetch,
             retry = 5,
             retryMsInterval = 2000
         } = opts
+
+        this.env = env
+
+        if (!this.env) {
+            throw new Error('env is undefined') // TODO: Test empty .env file
+        }
 
         this._fetch = async (url, options) => {
             console.log(`fetch: ${url}, options:`, options)
@@ -107,16 +115,16 @@ export class PoeClient{
                 }
                 reject(new Error(`Failed to fetch ${url} after ${retry} retries`))
             });
-        }
+        };
         this.headers = {
-            'poe-formkey': process.env["poe-formkey"] || '',
-            'poe-tchannel': process.env["poe-tchannel"] || '',
-            'cookie': process.env['cookie'] || cookie || '',
+            'poe-formkey': this.env["poe-formkey"] || '',
+            'poe-tchannel': this.env["poe-tchannel"] || '',
+            'cookie': this.env['cookie'] || cookie || '',
         }
         this.debug = debug
 
         this.setBotId()
-        if(this.debug) console.log(`env:\n`, JSON.stringify(process.env))
+        if(this.debug) console.log(`this.env:\n`, JSON.stringify(this.env))
 
         if (!this.headers.cookie) {
             throw new Error('cookie is null');
@@ -135,8 +143,8 @@ export class PoeClient{
      * Read .env file and set poe-formkey / buildId / botsInfo to memory
      */
     public setBotId() {
-        const envMap = Object.keys(process.env).reduce((result, key) => {
-            result.set(key, process.env[key]);
+        const envMap = Object.keys(this.env).reduce((result, key) => {
+            result.set(key, this.env[key]);
             return result;
         }, new Map());
 
@@ -150,8 +158,8 @@ export class PoeClient{
             const botChatIdKey = `${localNickname}_-_${localDisplayName}_chatId`;
             const botIdKey = `${localNickname}_-_${localDisplayName}_id`;
             if(envMap.has(botChatIdKey) && envMap.has(botIdKey)) {
-                let chatId = process.env[botChatIdKey];
-                let id = process.env[botIdKey];
+                let chatId = this.env[botChatIdKey];
+                let id = this.env[botIdKey];
                 if (!chatId || !id) {
                     continue
                 }
@@ -170,14 +178,15 @@ export class PoeClient{
      * If !poe-formkey || !buildId || !this.nextData, will updateAllBotInfo and write poe-formkey / buildId / botsInfo to .env file, for next chat use.
      * And get channel info => subscribe => connectWs
      */
-    public async init() {
-        this.nextData.buildId = process.env["buildId"] || undefined
-        if (!process.env["poe-formkey"] || !this.nextData.buildId) {
-            await this.updateAllBotInfo()
+    public async init(rewriteToLocalEnvFile: boolean = true): Promise<ProcessEnv>{
+        this.nextData.buildId = this.env["buildId"] || undefined
+        if (!this.env["poe-formkey"] || !this.nextData.buildId) {
+            await this.updateAllBotInfo(rewriteToLocalEnvFile)
         }
         await this.getChannelData() // get poe-tchannel
         await this.subscribe()
         await this.connectWs()
+        return Promise.resolve(this.env);
     }
 
     /**
@@ -458,14 +467,20 @@ export class PoeClient{
     public connectWs() {
         this.connected = false
         const url = this.getSocketUrl(this.tchannelData);
-        ws = new WebSocket(url);
+        this.ws = new WebSocket(url);
         return new Promise((resolve) => {
             const onOpen = () => {
                 this.connected = true
                 if(this.debug) console.log("Connected to websocket");
                 resolve(true)
             };
-            ws.on('open', onOpen);
+            const onError = (e: ErrorEvent) => {
+                this.connected = false
+                console.error("Connection error")
+                console.error(e.message);
+            }
+            this.ws?.on('open', onOpen);
+            this.ws.on('error', onError)
         });
     }
 
@@ -481,15 +496,15 @@ export class PoeClient{
                     if (state !== 'complete') {
                         callback?.(text)
                     } else {
-                        if (!ws) {
+                        if (!this.ws) {
                             console.error(`state === 'complete' and ws is null, onMsgData:`, JSON.stringify(jsonData))
                         }
-                        ws?.removeListener('message', onMessage);
+                        this.ws?.removeListener('message', onMessage);
                         resolve(true)
                     }
                 }
             }
-            ws.on('message', onMessage);
+            this.ws.on('message', onMessage);
         })
     }
 
@@ -499,9 +514,10 @@ export class PoeClient{
                 this.connected = false
                 return resolve(true);
             };
-            if (ws) {
-                ws.on('close', onClose);
-                ws.close();
+            if (this.ws) {
+                this.ws.on('close', onClose);
+                this.ws.close();
+                console.log(`ws closed`)
             }
             this.connected = false
         });
@@ -586,7 +602,7 @@ export class PoeClient{
      * @private
      */
     private getSocketUrl(tchannelData: TchannelData) {
-        const tchRand = Math.floor(100000 + Math.random() * 900000); // They're surely using 6 digit random number for ws url.
+        const tchRand = Math.floor(1e6 * Math.random()) + 1; // They're surely using 6 digit random number for ws url.
         const socketUrl = `wss://tch${tchRand}.tch.quora.com`;
         const boxName = tchannelData.boxName;
         const minSeq = tchannelData.minSeq;
@@ -663,7 +679,7 @@ export class PoeClient{
     /**
      * fetch poe-formkey, buildId, [BotDisplayName]_chatId, [BotDisplayName]_id and rewrite in .env !
      */
-    public async updateAllBotInfo() {
+    public async updateAllBotInfo(rewriteToLocalEnvFile: boolean = true) {
         await this.getNextData();
         await this.getBots();
 
@@ -676,10 +692,10 @@ export class PoeClient{
         const envPath = path.resolve(".env");
 
         // set key value pair to .env file
-        const envConfig = dotenv.parse(fs.readFileSync(envPath));
+        const envConfig = rewriteToLocalEnvFile ? dotenv.parse(fs.readFileSync(envPath)) : this.env;
         if (this.debug) {
-            console.log(`[poe-formkey] old:${envConfig["poe-formkey"]}, new: ${this.headers["poe-formkey"]}`)
-            console.log(`[buildId] old:${envConfig["buildId"]}, new: ${this.nextData.buildId}`)
+            console.log(`${rewriteToLocalEnvFile ? '[rewrite to .env enable]' : ''}[poe-formkey] old:${envConfig["poe-formkey"]}, new: ${this.headers["poe-formkey"]}`)
+            console.log(`${rewriteToLocalEnvFile ? '[rewrite to .env enable]' : ''}[buildId] old:${envConfig["buildId"]}, new: ${this.nextData.buildId}`)
         }
         envConfig["poe-formkey"] = this.headers["poe-formkey"];
         envConfig["buildId"] = this.nextData.buildId;
@@ -699,24 +715,29 @@ export class PoeClient{
             const envBotIdV = this.bots[botNickName]?.id+'';
 
             if (this.debug) {
-                console.log(`[${displayName}_chatId] old:${envConfig[envBotChatIdK]}, new: ${envBotChatIdV}`)
-                console.log(`[${displayName}_id] old:${envConfig[envBotIdK]}, new: ${envBotIdV}`)
+                console.log(`${rewriteToLocalEnvFile ? '[rewrite to .env enable]' : ''}[${displayName}_chatId] old:${envConfig[envBotChatIdK]}, new: ${envBotChatIdV}`)
+                console.log(`${rewriteToLocalEnvFile ? '[rewrite to .env enable]' : ''}[${displayName}_id] old:${envConfig[envBotIdK]}, new: ${envBotIdV}`)
             }
             envConfig[envBotChatIdK] = envBotChatIdV;
             envConfig[envBotIdK] = envBotIdV;
         }
 
-        // update env
-        const envConfigString = Object.entries(envConfig)
-            .map(([key, value]) => `${key}=${value}`)
-            .join('\n')
+        this.env = envConfig
 
-        // write to .env file
-        fs.writeFileSync(envPath, envConfigString);
-        if(this.debug) console.log(`.env file updated`)
+        if (rewriteToLocalEnvFile) {
+            // update env
+            const envConfigString = Object.entries(envConfig)
+                .map(([key, value]) => `${key}=${value}`)
+                .join('\n');
 
-        // reload env file
-        dotenv.config();
+            // write to .env file
+            fs.writeFileSync(envPath, envConfigString);
+            console.log(`.env file updated`);
+
+            // reload env file
+            dotenv.config();
+            this.env = process.env;
+        }
     }
 }
 

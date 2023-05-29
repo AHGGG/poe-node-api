@@ -1,6 +1,7 @@
 declare type FetchFunction = typeof fetch
 declare interface PoeClientOptions{
     cookie?: string
+    env?: ProcessEnv
     proxy?: ProxyInfo
     debug?: boolean
     fetch?: FetchFunction
@@ -59,4 +60,9 @@ declare interface HistoryItemChat {
     chatId: number
     defaultBotNickname: string
     id: string
+}
+
+declare interface ProcessEnv extends Dict<string> {}
+declare interface Dict<T> {
+    [key: string]: T | undefined;
 }
