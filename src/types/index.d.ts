@@ -4,6 +4,7 @@ declare interface PoeClientOptions{
     env?: ProcessEnv
     proxy?: ProxyInfo
     debug?: boolean
+    logLevel?: string
     fetch?: FetchFunction
     retry?: number
     retryMsInterval?: number

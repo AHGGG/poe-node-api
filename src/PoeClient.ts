@@ -5,6 +5,7 @@ import fs from "fs";
 import path from "path";
 import {fileURLToPath} from "url";
 import dotenv from "dotenv";
+import pino, {Logger} from "pino";
 
 dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
@@ -61,13 +62,13 @@ export const NickName: NickNameType = {
 }
 
 export class PoeClient{
+    private logger: Logger
     // @ts-ignore
     private ws: WebSocket
     private env: ProcessEnv
     private bots: Bots = {}
     private viewer: Viewer = {}
     private nextData: any = {}
-    private readonly debug: boolean = false
     private connected: boolean = false
     private headers : PoeHeaders
     // @ts-ignore
@@ -79,24 +80,34 @@ export class PoeClient{
         const {
             cookie,
             env = process.env,
-            debug = false,
+            logLevel = 'info',
             fetch = globalFetch,
             retry = 5,
             retryMsInterval = 2000
         } = opts
 
         this.env = env
+        this.logger = pino.pino({
+            level: logLevel,
+            transport: {
+                target: 'pino-pretty',
+                options: {
+                    colorize: false,
+                    ignore: 'hostname,pid'
+                }
+            }
+        });
 
         if (!this.env) {
-            throw new Error('env is undefined') // TODO: Test empty .env file
+            throw new Error('env is undefined, create .env file or pass your local envMap to Client constructor') // TODO: Test empty .env file
         }
 
         this._fetch = async (url, options) => {
-            console.log(`fetch: ${url}, options:`, options)
+            this.logger.info(options, `fetch: ${url}, options:`)
             return new Promise(async (resolve, reject) => {
                 for (let i = 0; i <= retry; ++i) {
                     if (i > 0) {
-                        console.log(`retrying ${url}, ${i}/${retry}...${new Date().getSeconds()}`)
+                        this.logger.info(`retrying ${url}, ${i}/${retry}...${new Date().getSeconds()}`)
                         await sleep(retryMsInterval)
                     }
                     try {
@@ -104,13 +115,13 @@ export class PoeClient{
                         if (retryRes.ok) {
                             return resolve(retryRes);
                         } else {
-                            console.error(`\tfetch failed: ${url}, ${retryRes.status}, ${retryRes.statusText}`)
+                            this.logger.error(`\tfetch failed: ${url}, ${retryRes.status}, ${retryRes.statusText}`)
                             if (+retryRes.status === 400) {
-                                console.error(`\t[Note] Make sure you put the correct cookie in .env file, like ===> cookie=p-b=xxxxxxxx. After setting a new cookie, delete other poe's old key-value pairs.`)
+                                this.logger.error(`\t[Note] Make sure you put the correct cookie in .env file, like ===> cookie=p-b=xxxxxxxx. After setting a new cookie, delete other poe's old key-value pairs.`)
                             }
                         }
                     } catch (e){
-                        console.error(e)
+                        this.logger.error(e)
                     }
                 }
                 reject(new Error(`Failed to fetch ${url} after ${retry} retries`))
@@ -121,10 +132,9 @@ export class PoeClient{
             'poe-tchannel': this.env["poe-tchannel"] || '',
             'cookie': this.env['cookie'] || cookie || '',
         }
-        this.debug = debug
 
         this.setBotId()
-        if(this.debug) console.log(`this.env:\n`, JSON.stringify(this.env))
+        this.logger.debug(this.env, `this.env:`)
 
         if (!this.headers.cookie) {
             throw new Error('cookie is null');
@@ -169,7 +179,7 @@ export class PoeClient{
                 };
                 this.nicknames[localDisplayName] = localNickname;
                 this.displayNames[localNickname] = localDisplayName;
-                if(this.debug) console.log(`read ${localDisplayName}'s chatId(${this.bots[localNickname]!.chatId}) and id(${this.bots[localNickname]!.id})`)
+                this.logger.debug(`read ${localDisplayName}'s chatId(${this.bots[localNickname]!.chatId}) and id(${this.bots[localNickname]!.id})`)
             }
         }
     }
@@ -224,7 +234,7 @@ export class PoeClient{
         });
         await this.listenWs(callback)
         if (!data.data) {
-            console.error("Could not send message! Please retry, Data:", data);
+            this.logger.error("Could not send message! Please retry, Data:", data);
         }
         return data;
     }
@@ -238,7 +248,7 @@ export class PoeClient{
             variables: {chatId: this.bots[botNickName]?.chatId},
         });
         if (!data.data) {
-            if(this.debug) console.log("Can not clear context! data:", data);
+            this.logger.debug(data, "Can not clear context! data:");
         }
         return data;
     }
@@ -255,7 +265,7 @@ export class PoeClient{
             },
         });
         if (!data.data) {
-            if(this.debug) console.log("Can not delete message! data:", data);
+            this.logger.debug(data, "Can not delete message! data:");
         }
         return data;
     }
@@ -286,7 +296,7 @@ export class PoeClient{
         })
         const data = await response.json()
         if (!data.data) {
-            if(this.debug) console.log("Can not purgeAllMessage res:", data);
+            this.logger.debug(data, "Can not purgeAllMessage res:");
         }
         return data;
     }
@@ -305,7 +315,7 @@ export class PoeClient{
         let messages: HistoryItem[] = []
         let displayName = this.getDisplayName(botNickName)
         if (!displayName) {
-            console.error(`Can not find displayName for botNickName: ${botNickName}`)
+            this.logger.error(`Can not find displayName for botNickName: ${botNickName}`)
         }
 
         // first cursor is in nextData, use this cursor to get latest 5? messages
@@ -331,29 +341,25 @@ export class PoeClient{
 
         if(count <= 0 || !cursor) return messages
 
-        if (this.debug) {
-            console.log(`=======================================================\n`)
-            console.log(`messages:\n`, JSON.stringify(messages))
-            console.log(`=======================================================\n`)
-        }
+        this.logger.debug(`=======================================================\n`)
+        this.logger.debug(messages, `messages:`)
+        this.logger.debug(`=======================================================\n`)
 
         while (count > 0) {
             const msgs = await this.getChatList(botNickName, count, cursor);
 
-            if(this.debug) {
-                console.log(`=======================================================\n`);
-                console.log(`msgs:\n`, JSON.stringify(msgs));
-                console.log(`=======================================================\n`);
-            }
+            this.logger.debug(`=======================================================\n`);
+            this.logger.debug(msgs, `msgs:`);
+            this.logger.debug(`=======================================================\n`);
 
             if (msgs === undefined || msgs.pageInfo === undefined || msgs.edges === undefined || msgs.edges.length === 0) {
-                if(this.debug) console.log(`msgs === undefined || msgs.pageInfo === undefined || msgs.edges === undefined || msgs.edges.length === 0`)
+                this.logger.debug(`msgs === undefined || msgs.pageInfo === undefined || msgs.edges === undefined || msgs.edges.length === 0`)
                 break
             }
             messages = msgs.edges.concat(messages);
             count -= msgs.edges.length;
             cursor = msgs.pageInfo.startCursor;
-            if(this.debug) {}console.log(`count: ${count}, cursor: ${cursor}`);
+            this.logger.debug(`count: ${count}, cursor: ${cursor}`);
         }
 
         return messages
@@ -373,7 +379,7 @@ export class PoeClient{
             id = this.bots[botNickName]?.id;
         }
         if (!id || !cursor) {
-            console.error(`Can not find id or cursor for botNickName: ${botNickName}, count: ${count}`);
+            this.logger.error(`Can not find id or cursor for botNickName: ${botNickName}, count: ${count}`);
             return [];
         }
 
@@ -420,7 +426,7 @@ export class PoeClient{
      * @private
      */
     public async getNextData() {
-        if(this.debug) console.log("\n=========================== Downloading next_data ===========================");
+        this.logger.debug("=========================== Downloading next_data ===========================");
         const r = await this._fetch("https://poe.com", {
             method: 'GET',
             headers: {cookie: this.headers.cookie}
@@ -436,10 +442,9 @@ export class PoeClient{
         this.nextData = nextData
         this.viewer = viewer
 
-        if (this.debug) {
-            console.log(`nextData:`, nextData, ` viewer:`, this.viewer);
-            console.log("\n=========================== Downloading next_data ===========================\n");
-        }
+        this.logger.debug(`\nnextData: ${JSON.stringify(nextData)}\nviewer: ${JSON.stringify(viewer)}`);
+        this.logger.debug("=========================== Downloading next_data ===========================\n\n");
+
         return nextData;
     }
 
@@ -448,7 +453,7 @@ export class PoeClient{
      * @private
      */
     private async getChannelData() {
-        if(this.debug) console.log("\n=========================== Downloading channelData ===========================");
+        this.logger.debug("=========================== Downloading channelData ===========================");
         const _setting = await this._fetch(
             'https://poe.com/api/settings',
             { headers: { cookie: this.headers.cookie } },
@@ -457,10 +462,8 @@ export class PoeClient{
         const channelData = await _setting.json();
         this.tchannelData = channelData.tchannelData
         this.headers['poe-tchannel'] = channelData.tchannelData.channel
-        if (this.debug) {
-            console.log(`channelData:`, channelData)
-            console.log("=========================== Downloading channelData ===========================\n");
-        }
+        this.logger.debug(channelData, `channelData:`)
+        this.logger.debug("=========================== Downloading channelData ===========================\n\n");
         return channelData.tchannelData;
     }
 
@@ -471,13 +474,13 @@ export class PoeClient{
         return new Promise((resolve) => {
             const onOpen = () => {
                 this.connected = true
-                if(this.debug) console.log("Connected to websocket");
+                this.logger.debug("Connected to websocket");
                 resolve(true)
             };
             const onError = (e: ErrorEvent) => {
                 this.connected = false
-                console.error("Connection error")
-                console.error(e.message);
+                this.logger.error("Connection error")
+                this.logger.error(e.message);
             }
             this.ws?.on('open', onOpen);
             this.ws.on('error', onError)
@@ -497,7 +500,7 @@ export class PoeClient{
                         callback?.(text)
                     } else {
                         if (!this.ws) {
-                            console.error(`state === 'complete' and ws is null, onMsgData:`, JSON.stringify(jsonData))
+                            this.logger.error(`state === 'complete' and ws is null, onMsgData:`, JSON.stringify(jsonData))
                         }
                         this.ws?.removeListener('message', onMessage);
                         resolve(true)
@@ -517,7 +520,7 @@ export class PoeClient{
             if (this.ws) {
                 this.ws.on('close', onClose);
                 this.ws.close();
-                console.log(`ws closed`)
+                this.logger.info(`ws closed`)
             }
             this.connected = false
         });
@@ -527,7 +530,7 @@ export class PoeClient{
      * Get all bots info from nextData's viewer["availableBots"]
      */
     public async getBots() {
-        if(this.debug) console.log("\n=========================== Downloading all bots ===========================");
+        this.logger.debug("=========================== Downloading all bots ===========================");
         let bot_list: any
         let bots: any = {}
 
@@ -544,10 +547,8 @@ export class PoeClient{
             if(nickName) bots[nickName] = chatData;
         }
         this.bots = bots
-        if (this.debug) {
-            console.log(`this.bots:`, JSON.stringify(this.bots))
-            console.log("=========================== Downloading all bots ===========================\n");
-        }
+        this.logger.debug(`this.bots:${JSON.stringify(this.bots)}`)
+        this.logger.debug("=========================== Downloading all bots ===========================\n\n");
         return bots;
     }
 
@@ -556,7 +557,7 @@ export class PoeClient{
      * @param displayName BotNickNameEnum
      */
     public async getBotByDisplayName(displayName: string) {
-        if(this.debug) console.log("\n=========================== getBotByDisplayName ===========================");
+        this.logger.debug(`=========================== getBotByDisplayName(${displayName}) ===========================`);
         const url = `https://poe.com/_next/data/${this.nextData.buildId}/${displayName}.json`;
 
         const retryRes = await this._fetch(url, {
@@ -575,13 +576,11 @@ export class PoeClient{
                 this.nicknames[displayName] = botNickName
                 this.displayNames[botNickName] = displayName;
             }
-            if (this.debug) {
-                console.log(`getBot:${displayName}, url:${url}, (${botNickName})this.bots[${botNickName}]: \n`, JSON.stringify(this.bots[botNickName]))
-                console.log("=========================== getBotByDisplayName ===========================\n");
-            }
+            this.logger.debug(`getBot:${displayName}, url:${url}, (${botNickName})this.bots[${botNickName}]: \n${JSON.stringify(this.bots[botNickName])}`)
+            this.logger.debug("=========================== getBotByDisplayName ===========================\n\n");
             return json?.pageProps?.payload?.chatOfBotDisplayName;
         }
-        if(this.debug) console.log("=========================== getBotByDisplayName ===========================\n");
+        this.logger.debug("=========================== getBotByDisplayName ===========================\n\n");
     }
 
     /**
@@ -591,7 +590,7 @@ export class PoeClient{
     public getDisplayName(botNickName: BotNickNameEnum | string) {
         const displayName = this.displayNames[botNickName] || this.bots[botNickName]?.defaultBotObject?.displayName || (typeof botNickName !== 'string' && DisplayName[botNickName]);
         if (!displayName) {
-            console.error(`getDisplayNameByNickName failed, botNickName: ${botNickName}`)
+            this.logger.error(`getDisplayNameByNickName failed, botNickName: ${botNickName}`)
         }
         return displayName;
     }
@@ -609,7 +608,7 @@ export class PoeClient{
         const channel = tchannelData.channel;
         const hash = tchannelData.channelHash;
         const wsUrl = `${socketUrl}/up/${boxName}/updates?min_seq=${minSeq}&channel=${channel}&hash=${hash}`
-        if(this.debug) console.log(`wsUrl:${wsUrl}`)
+        this.logger.debug(`wsUrl:${wsUrl}`)
         return wsUrl;
     }
 
@@ -645,31 +644,31 @@ export class PoeClient{
         // const scriptRegex = new RegExp('<script>if\\s*\\(.+\\)\\s*throw new Error;(.+)</script>');
         let regExpExecArray = scriptRegex.exec(html);
         const scriptText = regExpExecArray?.[1] || '';
-        if(this.debug) console.debug(`regExpExecArray:`, regExpExecArray, ` scriptText:`, scriptText)
+        this.logger.debug({regExpExecArray, scriptText}, `regExpExecArray and scriptText: `)
         const keyRegex = /var .\s*=\s*"([0-9a-f]+)",/;
         let regExpExecArray1 = keyRegex.exec(scriptText);
         if (!regExpExecArray1) {
-            console.error(`Could match ${keyRegex} from scriptText:`, scriptText)
+            this.logger.error(`Could match ${keyRegex} from scriptText:`, scriptText)
             return
         }
 
         const keyText = regExpExecArray1[1];
         if (!keyText) {return}
-        if(this.debug) console.debug(`keyText:`, keyText)
+        this.logger.debug(keyText, `keyText:`)
 
         const cipherRegex = /.\[(\d+)\]\s*=\s*.\[(\d+)\]/g;
         const cipherPairs = scriptText.matchAll(cipherRegex);
-        // if(this.debug) console.log(`cipherRegex:`, cipherRegex, ` cipherPairs:`, cipherPairs)
+        // this.logger.debug({cipherRegex, cipherPairs}, `cipherRegex and cipherPairs: `)
 
         const formkeyList: any[] = [];
         for (const pair of cipherPairs) {
-            // if(this.debug) console.log(`pair:`, pair)
+            // this.logger.debug(pair, `pair:`)
             const [_, formkeyIndex, keyIndex] = pair;
             // @ts-ignore
             formkeyList[formkeyIndex] = keyText[keyIndex];
         }
         const formkey = formkeyList.join("");
-        if(this.debug) console.log(`formkey:`, formkey)
+        this.logger.debug(formkey, `formkey:`)
         if (!formkey) {
             throw new Error("Could not extract formkey from scriptText");
         }
@@ -684,7 +683,7 @@ export class PoeClient{
         await this.getBots();
 
         if (!this.nextData.buildId || !this.headers["poe-formkey"]) {
-            console.error("Could not extract buildId from html");
+            this.logger.error("Could not extract buildId from html");
             return;
         }
 
@@ -693,16 +692,14 @@ export class PoeClient{
 
         // set key value pair to .env file
         const envConfig = rewriteToLocalEnvFile ? dotenv.parse(fs.readFileSync(envPath)) : this.env;
-        if (this.debug) {
-            console.log(`${rewriteToLocalEnvFile ? '[rewrite to .env enable]' : ''}[poe-formkey] old:${envConfig["poe-formkey"]}, new: ${this.headers["poe-formkey"]}`)
-            console.log(`${rewriteToLocalEnvFile ? '[rewrite to .env enable]' : ''}[buildId] old:${envConfig["buildId"]}, new: ${this.nextData.buildId}`)
-        }
+        this.logger.debug(`${rewriteToLocalEnvFile ? '[rewrite to .env enable]' : ''}[poe-formkey] old:${envConfig["poe-formkey"]}, new: ${this.headers["poe-formkey"]}`)
+        this.logger.debug(`${rewriteToLocalEnvFile ? '[rewrite to .env enable]' : ''}[buildId] old:${envConfig["buildId"]}, new: ${this.nextData.buildId}`)
         envConfig["poe-formkey"] = this.headers["poe-formkey"];
         envConfig["buildId"] = this.nextData.buildId;
 
         for (const botNickName in this.bots) {
             if (!this.bots[botNickName] || !this.bots[botNickName]?.chatId || !this.bots[botNickName]?.id) {
-                if(this.debug) console.log(`${botNickName} in this.bots is not valid!, this.bots[${botNickName}]:\n`, JSON.stringify(this.bots[botNickName], null, 2))
+                this.logger.debug(`${botNickName} in this.bots is not valid!, this.bots[${botNickName}]:\n${JSON.stringify(this.bots[botNickName], null, 2)}`)
                 continue;
             }
             let displayName = this.getDisplayName(botNickName as BotNickNameEnum)
@@ -714,10 +711,7 @@ export class PoeClient{
             const envBotIdK = `${botNickName}_-_${displayName}_id`;
             const envBotIdV = this.bots[botNickName]?.id+'';
 
-            if (this.debug) {
-                console.log(`${rewriteToLocalEnvFile ? '[rewrite to .env enable]' : ''}[${displayName}_chatId] old:${envConfig[envBotChatIdK]}, new: ${envBotChatIdV}`)
-                console.log(`${rewriteToLocalEnvFile ? '[rewrite to .env enable]' : ''}[${displayName}_id] old:${envConfig[envBotIdK]}, new: ${envBotIdV}`)
-            }
+            this.logger.debug(`${rewriteToLocalEnvFile ? '[rewrite to .env enable]' : ''}[${displayName}_chatId] old:${envConfig[envBotChatIdK]}, new: ${envBotChatIdV} && [${displayName}_id] old:${envConfig[envBotIdK]}, new: ${envBotIdV}`)
             envConfig[envBotChatIdK] = envBotChatIdV;
             envConfig[envBotIdK] = envBotIdV;
         }
@@ -732,7 +726,7 @@ export class PoeClient{
 
             // write to .env file
             fs.writeFileSync(envPath, envConfigString);
-            console.log(`.env file updated`);
+            this.logger.info(`.env file updated`);
 
             // reload env file
             dotenv.config();

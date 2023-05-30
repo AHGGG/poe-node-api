@@ -17,6 +17,7 @@ Support: Fetch needed info and write to .env file | send messages to different b
     - [UpdateAllBotInfo](#updateallbotinfo)
   - [Example](#example)
     - [SendMessage](#sendmessage-1)
+    - [Multi-account support](#multi-account-support)
     - [SetProxy](#setproxy)
     - [History](#history)
     - [FetchAllNeededInfo](#fetchallneededinfo)
@@ -43,7 +44,7 @@ cookie=p-b=xxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 3. Fetch all needed info
 ```ts
-const client = new PoeClient({debug: false});
+const client = new PoeClient({logLevel: 'debug'});
 await client.init()
 // If no poe-formkey and buildId in .env file, client will download needed params, next time will not need to fetch these params again until cookie is changed/logout(For now).
 ```
@@ -53,7 +54,7 @@ await client.init()
 ```ts
 import {PoeClient} from "poe-node-api";
 
-const client = new PoeClient({debug: false});
+const client = new PoeClient({logLevel: 'debug'});
 await client.init()
 ```
 - cookie?: string
@@ -163,6 +164,9 @@ await client.updateAllBotInfo()
 
 ## Example
 ### SendMessage
+[example - sendMessage.ts](example/sendMsg.ts)
+
+### Multi-account support
 [example - sendMessage.ts](example/sendMsg.ts)
 
 ### SetProxy

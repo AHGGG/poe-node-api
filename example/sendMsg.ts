@@ -8,7 +8,7 @@ import {BotNickNameEnum, PoeClient, sleep} from "../src/PoeClient";
 
 
 // ========================= use env for one account =========================
-const client = new PoeClient({debug: true});
+const client = new PoeClient({logLevel: 'debug'});
 await client.init(true)
 await sendMsg()
 async function sendMsg() {
@@ -34,7 +34,7 @@ async function sendMsg() {
 //     const client = new PoeClient({
 //         cookie: cookie,
 //         env: {}, // pass {"poe-formkey": "xxx", "buildId": "xxx" ......} after fetch them first from client1.init()
-//         debug: true
+//         logLevel: 'debug'
 //     });
 //     const envMap1 = await client.init(false)
 //     console.log(`envMap1:`, JSON.stringify(envMap1, null, 2))
@@ -96,7 +96,7 @@ async function sendMsg() {
 //         "nutria_-_Dragonfly_chatId": "xxx",
 //         "nutria_-_Dragonfly_id": "xxxxxx=="
 //     }, // pass env stored from last time, {"poe-formkey": "xxx", "buildId": "xxx" ......}
-//     debug: true
+//     logLevel: 'debug'
 // });
 // let env3 = await client3.init(false); // env3 is the same as env passed to PoeClient constructor
 // console.log(`env3:`, JSON.stringify(env3, null, 2))
