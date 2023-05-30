@@ -6,7 +6,7 @@ import {PoeClient} from "../src/PoeClient";
 // Terminal run: yarn run build
 // Terminal run: node .\dist\getAllInfo.js > getAllInfo.log
 // open .env file, needed params(buildId / chatId / id etc.) will write to .env file
-const options = {debug: true}
+const options = {logLevel: 'debug'}
 const client = new PoeClient(options);
 await client.init()
 

@@ -5,7 +5,7 @@ import {PoeClient, sleep} from "../src/PoeClient";
 // Terminal run: cp -r graphql dist/
 // Terminal run: yarn run build
 // Terminal run: node .\dist\example.js > example.log
-let client = new PoeClient({debug: true});
+let client = new PoeClient({logLevel: 'debug'});
 await client.init()
 
 // await sendMsg()

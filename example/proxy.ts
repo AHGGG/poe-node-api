@@ -12,7 +12,7 @@ const {HttpsProxyAgent} = http
 // Get your ip in https://ipinfo.io/
 // Search x-forwarded-for in proxy.log, and x-forwarded-for is equals to ip get from ipinfo.io
 
-const options = {debug: true}
+const options = {logLevel: 'debug'}
 setupProxy(options, {
     https: {
         proxy: 'http://127.0.0.1:1080' // http://username:password@domain:port

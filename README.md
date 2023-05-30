@@ -55,27 +55,24 @@ await client.init()
 import {PoeClient} from "poe-node-api";
 
 const client = new PoeClient({logLevel: 'debug'});
-await client.init()
 ```
 - cookie?: string
-- proxy?: ProxyInfo
-  - ```ts
-    interface ProxyInfo{
-      socks?: {
-          host: string,
-          port: number,
-      }
-      https?: {
-          proxy?: string,
-          allProxy?: string,
-      }
-    }
-    ```
-- debug?: boolean, enable debug console output
+- env?: [ProcessEnv](https://github.com/AHGGG/poe-node-api/blob/dev/src/types/index.d.ts#L66)(Default: process.env). for multi-account use, user can pass envMap to constructor, client will read needed info from that envMap
+- logLevel?: string(Default: 'info'). enable debug console output
 - fetch?: FetchFunction
   - type FetchFunction = typeof fetch
+- retry?: number(Default: 5).
+- retryMsInterval?: number(Default: 2000).
+- proxy?: [ProxyInfo](https://github.com/AHGGG/poe-node-api/blob/dev/src/types/index.d.ts#L12)
 
-5. choose a bot and send msg
+5. init
+```ts
+await client.init()
+```
+- rewriteToLocalEnvFile: boolean = true. This means that the client will retrieve necessary parameters like `buildId` / `poe-formkey` and overwrite them in the local '.env' file.
+> To prevent conflicts, when using multi-account, you should set `rewriteToLocalEnvFile` to false
+
+6. choose a bot and send msg
 
 botNickName <==> botDisplayName
 > - a2 <==> Claude-instant
@@ -85,6 +82,7 @@ botNickName <==> botDisplayName
 > - nutria <==> Dragonfly
 > - chinchilla <==> ChatGPT
 > - hutia <==> NeevaAI
+> - Your own bot
 
 
 ### SendMessage

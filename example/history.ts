@@ -6,7 +6,7 @@ import {BotNickNameEnum, PoeClient, sleep} from "../src/PoeClient";
 // Terminal run: yarn run build
 // Terminal run: node .\dist\history.js > history.log
 
-const client = new PoeClient({debug: true});
+const client = new PoeClient({logLevel: 'debug'});
 await client.init()
 
 await getHistory();
