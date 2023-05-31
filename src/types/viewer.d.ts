@@ -5,40 +5,23 @@ declare type Viewer = {
         fullName: any
         id: string
         handle: any
+        creationTime: number
     }
-    availableBots?: Array<{
-        id: string
-        handle: string
+    viewerBotList?: ViewerBotList
+    allowUserCreatedBots?: boolean
+    enableExploreBotsPage?: boolean
+    subscriptionBots?: Array<{
         displayName: string
         messageLimit: {
-            dailyLimit?: number
-            monthlyLimit?: number
+            monthlyLimit: number
         }
+        id: string
         deletionState: string
         image: {
             __typename: string
             localName: string
         }
-        __isNode: string
-        isPrivateBot: boolean
-        viewerIsCreator: boolean
     }>
-    allowUserCreatedBots?: boolean
-    enableUserProfilePage?: boolean
-    hasCompletedMultiplayerNux?: boolean
-    enableNux?: boolean
-    allowImages?: boolean
-    allowImagesForApiBots?: boolean
-    improvedCodeblocks?: boolean
-    allowsUserBotCreation?: boolean
-    showBotInfoCard?: boolean
-    subscription?: {
-        isActive: boolean
-        id: string
-        expiresTime: any
-        willCancelAtPeriodEnd: any
-    }
-    isEligibleForWebSubscriptions?: boolean
     webSubscriptionPriceInfo?: {
         yearlyPrice: string
         yearlyPricePerMonth: string
@@ -47,6 +30,50 @@ declare type Viewer = {
         id: string
         monthlyPrice: string
     }
+    isEligibleForWebSubscriptions?: boolean
+    enableUserProfilePage?: boolean
+    enableSubscriptionButton?: boolean
+    hasActiveSubscription?: boolean
+    hasCompletedMultiplayerNux?: boolean
+    enableNux?: boolean
+    allowImages?: boolean
+    allowImagesForApiBots?: boolean
+    allowsUserBotCreation?: boolean
+    enableSharingApiBots?: boolean
+    webPurchasesEnabled?: boolean
+    removeWelcomeTopicsVariant?: any
+    showStopButton?: boolean
+    subscription?: {
+        isActive: boolean
+        id: string
+        expiresTime: any
+        willCancelAtPeriodEnd: any
+    }
     shouldSeeWebSubscriptionAnnouncement?: boolean
+    voiceInputEnabled?: boolean
+    enableRemoveBotFromSidebar?: boolean
+    availableBots?: Array<{
+        botId: number
+        id: string
+    }>
+    enableI18n?: boolean
     id?: string
+}
+
+declare type ViewerBotList = Array<ViewerBot>
+declare type ViewerBot = {
+    id: string
+    botId: number
+    handle: string
+    displayName: string
+    isLimitedAccess: boolean
+    deletionState: string
+    image: {
+        __typename: string
+        localName: string
+    }
+    __isNode: string
+    isPrivateBot: boolean
+    viewerIsCreator: boolean
+    isSystemBot: boolean
 }
