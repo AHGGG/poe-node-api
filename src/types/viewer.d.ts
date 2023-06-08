@@ -7,7 +7,12 @@ declare type Viewer = {
         handle: any
         creationTime: number
     }
-    viewerBotList?: ViewerBotList
+    availableBotsConnection?: {
+        edges: ViewerBotList
+        id: string
+    }
+    showSubscriptionSubtitle?: boolean
+    hasActiveSubscription?: boolean
     allowUserCreatedBots?: boolean
     enableExploreBotsPage?: boolean
     subscriptionBots?: Array<{
@@ -33,12 +38,11 @@ declare type Viewer = {
     isEligibleForWebSubscriptions?: boolean
     enableUserProfilePage?: boolean
     enableSubscriptionButton?: boolean
-    hasActiveSubscription?: boolean
     hasCompletedMultiplayerNux?: boolean
     enableNux?: boolean
     allowImages?: boolean
     allowImagesForApiBots?: boolean
-    allowsUserBotCreation?: boolean
+    botCreationEnabled?: boolean
     enableSharingApiBots?: boolean
     webPurchasesEnabled?: boolean
     removeWelcomeTopicsVariant?: any
@@ -50,7 +54,9 @@ declare type Viewer = {
         willCancelAtPeriodEnd: any
     }
     shouldSeeWebSubscriptionAnnouncement?: boolean
+    deferWebSubscriptionAnnouncementExptVariant?: any
     voiceInputEnabled?: boolean
+    shoulShowModelInMessageLimit?: boolean
     enableRemoveBotFromSidebar?: boolean
     availableBots?: Array<{
         botId: number
@@ -62,18 +68,21 @@ declare type Viewer = {
 
 declare type ViewerBotList = Array<ViewerBot>
 declare type ViewerBot = {
-    id: string
-    botId: number
-    handle: string
-    displayName: string
-    isLimitedAccess: boolean
-    deletionState: string
-    image: {
-        __typename: string
-        localName: string
+    node: {
+        id: string
+        handle: string
+        botId: number
+        displayName: string
+        isLimitedAccess: boolean
+        deletionState: string
+        image: {
+            __typename: string
+            localName: string
+        }
+        __isNode: string
+        isPrivateBot: boolean
+        viewerIsCreator: boolean
+        isSystemBot: boolean
     }
-    __isNode: string
-    isPrivateBot: boolean
-    viewerIsCreator: boolean
-    isSystemBot: boolean
+    id: string
 }
