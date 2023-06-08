@@ -534,13 +534,13 @@ export class PoeClient{
         let bot_list: ViewerBotList
         let bots: any = {}
 
-        if (!this.viewer['viewerBotList']) {
-            throw new Error("Invalid token or no bots are available. Might: network error, try to getDataNext first. Or Viewer dataStructure changed, please create an issue on github");
+        if (!this.viewer['availableBotsConnection']) {
+            throw new Error("Invalid token or no bots are available. Might: network error, try to getDataNext first. Or Viewer dataStructure changed! Please create an issue on github");
         }
-        bot_list = this.viewer["viewerBotList"]!;
+        bot_list = this.viewer["availableBotsConnection"]?.edges;
 
         for (let bot of bot_list) {
-            let displayName = bot['displayName'];
+            let displayName = bot?.node?.displayName;
             if(!displayName) continue;
             let chatData: any = await this.getBotByDisplayName(displayName);
             let nickName = chatData?.defaultBotObject?.nickname;
