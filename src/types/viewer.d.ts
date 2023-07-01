@@ -7,20 +7,37 @@ declare type Viewer = {
         handle: any
         creationTime: number
     }
+    enableRightSidebar?: boolean
     availableBotsConnection?: {
         edges: ViewerBotList
-        id: string
-    }
-    showSubscriptionSubtitle?: boolean
-    hasActiveSubscription?: boolean
-    allowUserCreatedBots?: boolean
-    enableExploreBotsPage?: boolean
-    subscriptionBots?: Array<{
-        displayName: string
-        messageLimit: {
-            monthlyLimit: number
+        pageInfo: {
+            endCursor: string
+            hasNextPage: boolean
         }
         id: string
+    }
+    hasActiveSubscription?: boolean
+    allowUserCreatedBots?: boolean
+    poeImproveBotDiscoverability?: boolean
+    isEligibleForWebSubscriptions?: boolean
+    hasCompletedMultiplayerNux?: boolean
+    allowImages?: boolean
+    allowImagesForApiBots?: boolean
+    promptBotImageDomainWhitelist?: Array<string>
+    botCreationEnabled?: boolean
+    useImprovedOverflowMenu?: boolean
+    shoulShowModelInMessageLimitText?: boolean
+    subscription?: {
+        isActive: boolean
+        id: string
+        expiresTime: any
+        willCancelAtPeriodEnd: any
+        purchaseRevocationReason: any
+    }
+    shouldSeeWebSubscriptionAnnouncement?: boolean
+    subscriptionBots?: Array<{
+        id: string
+        displayName: string
         deletionState: string
         image: {
             __typename: string
@@ -28,42 +45,23 @@ declare type Viewer = {
         }
     }>
     webSubscriptionPriceInfo?: {
-        yearlyPrice: string
-        yearlyPricePerMonth: string
-        yearlyPercentageSavings: string
         isFreeTrialAvailable: boolean
         id: string
-        monthlyPrice: string
     }
-    isEligibleForWebSubscriptions?: boolean
-    enableUserProfilePage?: boolean
-    enableSubscriptionButton?: boolean
-    hasCompletedMultiplayerNux?: boolean
-    enableNux?: boolean
-    allowImages?: boolean
-    allowImagesForApiBots?: boolean
-    botCreationEnabled?: boolean
-    enableSharingApiBots?: boolean
-    webPurchasesEnabled?: boolean
-    removeWelcomeTopicsVariant?: any
-    showStopButton?: boolean
-    subscription?: {
-        isActive: boolean
-        id: string
-        expiresTime: any
-        willCancelAtPeriodEnd: any
-    }
-    shouldSeeWebSubscriptionAnnouncement?: boolean
-    deferWebSubscriptionAnnouncementExptVariant?: any
-    voiceInputEnabled?: boolean
-    shoulShowModelInMessageLimit?: boolean
-    enableRemoveBotFromSidebar?: boolean
-    availableBots?: Array<{
+    shouldSeeResponseSpeedUpsell?: boolean
+    defaultBot?: {
         botId: number
         id: string
-    }>
-    enableI18n?: boolean
+    }
+    alwaysAllow?: boolean
+    voiceInputEnabled?: boolean
+    fileInputEnabled?: boolean
+    ignoreFileUploadLimit?: boolean
+    shoulShowModelInMessageLimit?: boolean
+    enableRemoveBotFromSidebar?: boolean
     id?: string
+    enableI18n?: boolean
+    downloadPromptAndroidAppVariant?: any
 }
 
 declare type ViewerBotList = Array<ViewerBot>
@@ -83,6 +81,8 @@ declare type ViewerBot = {
         isPrivateBot: boolean
         viewerIsCreator: boolean
         isSystemBot: boolean
+        __typename: string
     }
+    cursor: string
     id: string
 }

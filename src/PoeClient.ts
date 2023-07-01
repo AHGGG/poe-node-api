@@ -435,7 +435,7 @@ export class PoeClient{
         let html = await r.text();
         let jsonText = json_regex.exec(html)?.[1]; // get script props data
         let nextData = JSON.parse(jsonText!)
-        const {props: {pageProps: {payload: {viewer}}}} = JSON.parse(jsonText!);
+        const {props: {pageProps: {data: {viewer}}}} = JSON.parse(jsonText!);
 
         const formKey = await this.extractFormkey(html) || ''
         this.headers['poe-formkey'] = formKey;
@@ -567,18 +567,18 @@ export class PoeClient{
         );
 
         let json = await retryRes.json();
-        if (json?.pageProps?.payload?.chatOfBotDisplayName
-            && json?.pageProps?.payload?.chatOfBotDisplayName?.chatId
-            && json?.pageProps?.payload?.chatOfBotDisplayName?.id) {
-            const botNickName = json.pageProps.payload.chatOfBotDisplayName?.defaultBotObject?.nickname;
+        if (json?.pageProps?.data?.chatOfBotDisplayName
+            && json?.pageProps?.data?.chatOfBotDisplayName?.chatId
+            && json?.pageProps?.data?.chatOfBotDisplayName?.id) {
+            const botNickName = json.pageProps.data.chatOfBotDisplayName?.defaultBotObject?.nickname;
             if (displayName && botNickName) {
-                this.bots[botNickName] = json.pageProps.payload.chatOfBotDisplayName;
+                this.bots[botNickName] = json.pageProps.data.chatOfBotDisplayName;
                 this.nicknames[displayName] = botNickName
                 this.displayNames[botNickName] = displayName;
             }
             this.logger.debug(`getBot:${displayName}, url:${url}, (${botNickName})this.bots[${botNickName}]: \n${JSON.stringify(this.bots[botNickName])}`)
             this.logger.debug("=========================== getBotByDisplayName ===========================\n\n");
-            return json?.pageProps?.payload?.chatOfBotDisplayName;
+            return json?.pageProps?.data?.chatOfBotDisplayName;
         }
         this.logger.debug("=========================== getBotByDisplayName ===========================\n\n");
     }
