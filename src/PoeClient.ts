@@ -567,18 +567,18 @@ export class PoeClient{
         );
 
         let json = await retryRes.json();
-        if (json?.pageProps?.data?.chatOfBotDisplayName
-            && json?.pageProps?.data?.chatOfBotDisplayName?.chatId
-            && json?.pageProps?.data?.chatOfBotDisplayName?.id) {
-            const botNickName = json.pageProps.data.chatOfBotDisplayName?.defaultBotObject?.nickname;
+        if (json?.pageProps?.data?.chatOfBotHandle
+            && json?.pageProps?.data?.chatOfBotHandle?.chatId
+            && json?.pageProps?.data?.chatOfBotHandle?.id) {
+            const botNickName = json.pageProps.data.chatOfBotHandle?.defaultBotObject?.nickname;
             if (displayName && botNickName) {
-                this.bots[botNickName] = json.pageProps.data.chatOfBotDisplayName;
+                this.bots[botNickName] = json.pageProps.data.chatOfBotHandle;
                 this.nicknames[displayName] = botNickName
                 this.displayNames[botNickName] = displayName;
             }
             this.logger.debug(`getBot:${displayName}, url:${url}, (${botNickName})this.bots[${botNickName}]: \n${JSON.stringify(this.bots[botNickName])}`)
             this.logger.debug("=========================== getBotByDisplayName ===========================\n\n");
-            return json?.pageProps?.data?.chatOfBotDisplayName;
+            return json?.pageProps?.data?.chatOfBotHandle;
         }
         this.logger.debug("=========================== getBotByDisplayName ===========================\n\n");
     }
