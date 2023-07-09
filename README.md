@@ -50,7 +50,7 @@ await client.init()
 ```
 - [UpdateAllBotInfo](#updateallbotinfo)
 
-4. Create a client
+How to create a client:
 ```ts
 import {PoeClient} from "poe-node-api";
 
@@ -65,14 +65,14 @@ const client = new PoeClient({logLevel: 'debug'});
 - retryMsInterval?: number(Default: 2000).
 - proxy?: [ProxyInfo](https://github.com/AHGGG/poe-node-api/blob/dev/src/types/index.d.ts#L12)
 
-5. init
+How to init client
 ```ts
 await client.init()
 ```
 - rewriteToLocalEnvFile: boolean = true. This means that the client will retrieve necessary parameters like `buildId` / `poe-formkey` and overwrite them in the local '.env' file.
 > To prevent conflicts, when using multi-account, you should set `rewriteToLocalEnvFile` to false
 
-6. choose a bot and send msg
+Bot nicknames
 
 botNickName <==> botDisplayName
 > - a2 <==> Claude-instant
