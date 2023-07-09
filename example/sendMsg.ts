@@ -17,7 +17,7 @@ async function sendMsg() {
     await client.sendMessage("Ping", BotNickNameEnum.capybara, true, (result: string) => {
         console.log(`${result}`)
     })
-    console.log(`msg sended!`)
+    console.log(`msg sent!`)
 }
 
 
